@@ -2,8 +2,10 @@ name: mobsms_example
 description: Demonstrates how to use the mobsms plugin.
 publish_to: 'none'
 
+version: 1.22.5+1
+
 environment:
-  sdk: ">=1.19.0 <3.0.0"
+  sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -16,6 +18,9 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  e2e: ^0.2.1
+  flutter_driver:
     sdk: flutter
 
   # For dev use(dependencies on unpublished packages)
