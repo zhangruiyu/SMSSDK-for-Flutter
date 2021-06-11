@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cn.smssdk.demo">
+    package="cn.smssdk.demo"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
@@ -9,6 +10,8 @@
     <application
         android:usesCleartextTraffic="true"
         android:label="mobsms_example"
+        tools:replace="android:allowBackup"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher">
 
         <meta-data
