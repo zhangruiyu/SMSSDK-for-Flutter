@@ -5,7 +5,7 @@ homepage: http://www.mob.com
 
 environment:
   sdk: ">=2.0.0 <3.0.0"
-  flutter: ">=1.10.0"
+  flutter: ">=1.12.13+hotfix.6 <2.0.0"
 
 dependencies:
   flutter:

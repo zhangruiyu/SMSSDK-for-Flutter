@@ -97,6 +97,49 @@ class Smssdk {
     return callback;
   }
 
+  static Future getToken (Function(dynamic ret,Map err)result){
+    Future<dynamic> callback = _channel.invokeMethod('getToken');
+
+    callback.then((dynamic response){
+      if(result != null)
+      {
+        if(response is Map)
+        {
+          result(response["ret"],response["err"]);
+        }
+        else
+        {
+          result(null,null);
+        }
+      }
+    });
+
+    return callback;
+  }
+
+  static Future login (String phoneNumber,Function(dynamic ret,Map err)result){
+
+    Map args = {"phoneNumber": phoneNumber};
+
+    Future<dynamic> callback = _channel.invokeMethod('login',args);
+
+    callback.then((dynamic response){
+      if(result != null)
+      {
+        if(response is Map)
+        {
+          result(response["ret"],response["err"]);
+        }
+        else
+        {
+          result(null,null);
+        }
+      }
+    });
+
+    return callback;
+  }
+
 
   static Future getFriends(Function(dynamic ret,Map err)result) {
 

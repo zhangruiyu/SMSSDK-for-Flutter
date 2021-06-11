@@ -14,6 +14,7 @@ import java.util.Map;
 import cn.smssdk.EventHandler;
 import cn.smssdk.SMSSDK;
 import cn.smssdk.utils.SPHelper;
+import cn.smssdk.wrapper.TokenVerifyResult;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -28,6 +29,7 @@ public class MobsmsPlugin implements MethodCallHandler {
 	private static final String KEY_MSG = "msg";
 	private static final int BRIDGE_ERR = 700;
 	private static final String ERROR_INTERNAL = "Flutter bridge internal error: ";
+	private TokenVerifyResult tokenVerifyResult;
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
@@ -199,24 +201,69 @@ public class MobsmsPlugin implements MethodCallHandler {
 
 		SMSSDK.getSupportedCountries();
 	}
-	else if (call.method.equals("getFriends")) {
+
+	else if (call.method.equals("login")) {
 		// 注册监听器
 		EventHandler callback = new EventHandler() {
 			@Override
 			public void afterEvent(final int event, final int result, final Object data) {
 				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_FRIENDS_IN_APP) {
-						// callback onSuccess
-						/* data示例：[{uid=1155310877, phone=17301652905, nickname=SmsSDK_User_1155310877,
-						 *     avatar=http://img1.touxiang.cn/uploads/20121224/24-054837_708.jpg, isnew=true}]
-						 */
-						ArrayList<HashMap<String, Object>> list = (ArrayList<HashMap<String, Object>>)data;
+					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
+						tokenVerifyResult = null;
 						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("friends", list);
-						onSuccess(rst, map);
+						map.put("success",true);
+						onSuccess(rst,map);
 					}
 				} else {
-					if (event == SMSSDK.EVENT_GET_FRIENDS_IN_APP) {
+					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
+						// callback onError
+						tokenVerifyResult = null;
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("login() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+		String phoneNumber = call.argument("phoneNumber");
+		if (tokenVerifyResult == null){
+			try {
+				JSONObject errorJson = new JSONObject();
+				errorJson.putOpt("detail","请先调用获取token方法");
+				onSdkError(rst,errorJson.toString());
+			} catch (JSONException e) {
+			}
+		} else {
+			SMSSDK.login(phoneNumber,tokenVerifyResult);
+		}
+
+	}
+	else if (call.method.equals("getToken")) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
+						tokenVerifyResult = (TokenVerifyResult) data;
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put("opToken",tokenVerifyResult.getOpToken());
+						map.put("token",tokenVerifyResult.getToken());
+						map.put("operator",tokenVerifyResult.getOperator());
+						onSuccess(rst,map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
 						// callback onError
 						if (data instanceof Throwable) {
 							Throwable throwable = (Throwable) data;
@@ -224,7 +271,7 @@ public class MobsmsPlugin implements MethodCallHandler {
 							onSdkError(rst, msg);
 						} else {
 							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getFriends() internal error: " + msg);
+							SMSSDKLog.e("getToken() internal error: " + msg);
 							onInternalError(rst, msg);
 						}
 					}
@@ -236,7 +283,7 @@ public class MobsmsPlugin implements MethodCallHandler {
 		SMSSDK.unregisterAllEventHandler();
 		SMSSDK.registerEventHandler(callback);
 
-		SMSSDK.getFriendsInApp();
+		SMSSDK.getToken();
 	}
 	else if (call.method.equals("submitUserInfo")) {
 		// 注册监听器

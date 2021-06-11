@@ -216,12 +216,12 @@ void showPrivacyAlert(String text, BuildContext context) {
           ),
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: double.infinity),
-            child: new FlatButton(
-            color: Colors.blueGrey,
-            textColor: Colors.white,
-            child: new Text('获取应用内好友'),
-            onPressed: (){
-              Smssdk.getFriends((dynamic ret, Map err){
+            child: new   FlatButton(
+              color: Colors.blueGrey,
+              textColor: Colors.white,
+              child: new Text('本机号码获取token'),
+              onPressed: (){
+                Smssdk.getToken((dynamic ret, Map err){
                   if(err!=null)
                   {
                     showAlert(err.toString(),context);
@@ -231,30 +231,28 @@ void showPrivacyAlert(String text, BuildContext context) {
                     showAlert(ret.toString(),context);
                   }
                 });
-            },
-          ),
+              },
+            ),
           ),
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: double.infinity),
-            child: new FlatButton(
-            color: Colors.blueGrey,
-            textColor: Colors.white,
-            child: new Text('提交用户信息'),
-            onPressed: (){
-                Smssdk.submitUserInfo("3241241", "SmsSDK_Flutter_User_3241241",
-                    "http://download.sdk.mob.com/510/deb/0c0731ac543eb71311c482a2e2.png",
-                    zoneController.text, phoneController.text, (dynamic ret, Map err){
+            child: new   FlatButton(
+              color: Colors.blueGrey,
+              textColor: Colors.white,
+              child: new Text('登陆'),
+              onPressed: (){
+                Smssdk.login(phoneController.text,(dynamic ret, Map err){
                   if(err!=null)
                   {
                     showAlert(err.toString(),context);
                   }
                   else
                   {
-                    showAlert('提交用户信息 成功!',context);
+                    showAlert(ret.toString(),context);
                   }
                 });
-            },
-          ),
+              },
+            ),
           ),
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: double.infinity), 
