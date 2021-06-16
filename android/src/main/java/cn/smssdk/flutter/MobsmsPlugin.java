@@ -431,7 +431,12 @@ public class MobsmsPlugin implements MethodCallHandler {
 		  new Handler(Looper.getMainLooper()).post(new Runnable() {
 			  @Override
 			  public void run() {
-				  result.success(map);
+				  try {
+					  result.success(map);
+				  }catch (IllegalStateException e){
+					  // ignore
+					  e.printStackTrace();
+				  }
 			  }
 		  });
 	  } catch (JSONException e) {
@@ -452,7 +457,12 @@ public class MobsmsPlugin implements MethodCallHandler {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			@Override
 			public void run() {
-				result.success(map);
+				try {
+					result.success(map);
+				}catch (IllegalStateException e){
+					// ignore
+					e.printStackTrace();
+				}
 			}
 		});
 	}
