@@ -3,14 +3,12 @@ package cn.smssdk.flutter;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-
+import com.mob.MobSDK;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import cn.smssdk.EventHandler;
 import cn.smssdk.SMSSDK;
 import cn.smssdk.utils.SPHelper;
@@ -41,251 +39,66 @@ public class MobsmsPlugin implements MethodCallHandler {
   @Override
   public void onMethodCall(MethodCall call, final Result rst) {
 	  SMSSDKLog.d("onMethodCall. method: " + call.method);
-	if (call.method.equals("getTextCode")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_VERIFICATION_CODE) {
-						boolean smart = (Boolean)data;
-						// callback onSuccess
-						Map<String, Object> map = new HashMap<>();
-						map.put("smart", smart);
-						onSuccess(rst, map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_GET_VERIFICATION_CODE) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getTextCode() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
+	  switch (call.method) {
+		  case "getTextCode":
+			  getTextCode(call, rst);
+		  	break;
+		  case "getVoiceCode":
+			  getVoiceCode(call, rst);
+		  	break;
+		  case "commitCode":
+			  commitCode(call, rst);
+		  	break;
+		  case "getSupportedCountries":
+			  getSupportedCountries(call, rst);
+			  break;
+		  case "login":
+			  login(call, rst);
+			  break;
+		  case "getToken":
+			  getToken(call, rst);
+			  break;
+		  case "submitUserInfo":
+			  submitUserInfo(call, rst);
+			  break;
+		  case "getVersion":
+			  getVersion(call, rst);
+			  break;
+		  case "enableWarn":
+			  enableWarn(call, rst);
+			  break;
+		  case "uploadPrivacyStatus":
+			  uploadPrivacyStatus(call, rst);
+			  break;
+		  default:
+			  rst.notImplemented();
+			break;
+	  }
+  }
 
-    	String phoneNumber = call.argument("phoneNumber");
-    	String zone = call.argument("zone");
-    	String tempCode = call.argument("tempCode");
-		SMSSDKLog.d("tempCode: " + tempCode);
-		SMSSDKLog.d("zone: " + zone);
-		SMSSDKLog.d("phoneNumber: " + phoneNumber);
-		SMSSDK.getVerificationCode(tempCode, zone, phoneNumber);
-	}
-	else if (call.method.equals("getVoiceCode")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_VOICE_VERIFICATION_CODE) {
-						// callback onSuccess
-						// 此接口data=null
-						Map<String, Object> map = new HashMap<>();
-						onSuccess(rst, map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_GET_VOICE_VERIFICATION_CODE) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getVoiceCode() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-
-		String phoneNumber = call.argument("phoneNumber");
-		String zone = call.argument("zone");
-		SMSSDKLog.d("zone: " + zone);
-		SMSSDKLog.d("phoneNumber: " + phoneNumber);
-		SMSSDK.getVoiceVerifyCode(zone, phoneNumber);
-	}
-	else if (call.method.equals("commitCode")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_SUBMIT_VERIFICATION_CODE) {
-						// callback onSuccess
-						// data示例：{country=86, phone=13362206853}
-						HashMap<String, Object> dataMap = (HashMap<String, Object>)data;
-						Map<String, Object> map = new HashMap<>();
-						onSuccess(rst, map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_SUBMIT_VERIFICATION_CODE) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("commitCode() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-
-		String phoneNumber = call.argument("phoneNumber");
-		String zone = call.argument("zone");
-		String code = call.argument("code");
-		SMSSDKLog.d("zone: " + zone);
-		SMSSDKLog.d("phoneNumber: " + phoneNumber);
-		SMSSDKLog.d("code: " + code);
-		SMSSDK.submitVerificationCode(zone, phoneNumber, code);
-	}
-	else if (call.method.equals("getSupportedCountries")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_SUPPORTED_COUNTRIES) {
-						// callback onSuccess
-						// data示例：[{zone=590, rule=^\d+}, {zone=680, rule=^\d+}]
-						ArrayList<HashMap<String, Object>> list = (ArrayList<HashMap<String, Object>>)data;
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("countries", list);
-						onSuccess(rst, map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_GET_SUPPORTED_COUNTRIES) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getSupportedCountries() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-
-		SMSSDK.getSupportedCountries();
-	}
-
-	else if (call.method.equals("login")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
-						tokenVerifyResult = null;
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("success",true);
-						onSuccess(rst,map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
-						// callback onError
-						tokenVerifyResult = null;
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("login() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-		String phoneNumber = call.argument("phoneNumber");
-		if (tokenVerifyResult == null){
-			try {
-				JSONObject errorJson = new JSONObject();
-				errorJson.putOpt("detail","请先调用获取token方法");
-				onSdkError(rst,errorJson.toString());
-			} catch (JSONException e) {
-			}
-		} else {
-			SMSSDK.login(phoneNumber,tokenVerifyResult);
+	private void uploadPrivacyStatus(MethodCall call, Result rst) {
+		if (call.hasArgument("status")) {
+			Boolean grantResult = call.argument("status");
+			MobSDK.submitPolicyGrantResult(grantResult, null);
 		}
-
 	}
-	else if (call.method.equals("getToken")) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
-						tokenVerifyResult = (TokenVerifyResult) data;
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("opToken",tokenVerifyResult.getOpToken());
-						map.put("token",tokenVerifyResult.getToken());
-						map.put("operator",tokenVerifyResult.getOperator());
-						onSuccess(rst,map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getToken() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
 
-		SMSSDK.getToken();
+	private void enableWarn(MethodCall call, Result rst) {
+		boolean isWarn = call.argument("isWarn");
+		SMSSDKLog.d("isWarn: " + isWarn);
+		SPHelper.getInstance().setWarnWhenReadContact(isWarn);
+		Map<String, Object> map = new HashMap<>();
+		onSuccess(rst, map);
 	}
-	else if (call.method.equals("submitUserInfo")) {
+
+	private void getVersion(MethodCall call, Result rst) {
+		String version = SMSSDK.getVersion();
+		Map<String, Object> map = new HashMap<>();
+		map.put("version", version);
+		onSuccess(rst, map);
+	}
+
+	private void submitUserInfo(MethodCall call, final Result rst) {
 		// 注册监听器
 		EventHandler callback = new EventHandler() {
 			@Override
@@ -331,25 +144,256 @@ public class MobsmsPlugin implements MethodCallHandler {
 		SMSSDKLog.d("avatar: " + avatar);
 		SMSSDK.submitUserInfo(uid, nickname, avatar, zone, phoneNumber);
 	}
-	else if (call.method.equals("getVersion")) {
-		String version = SMSSDK.getVersion();
-		Map<String, Object> map = new HashMap<>();
-		map.put("version", version);
-		onSuccess(rst, map);
-	}
-	else if (call.method.equals("enableWarn")) {
-		boolean isWarn = call.argument("isWarn");
-		SMSSDKLog.d("isWarn: " + isWarn);
-		SPHelper.getInstance().setWarnWhenReadContact(isWarn);
-		Map<String, Object> map = new HashMap<>();
-		onSuccess(rst, map);
-	}
-	else {
-      rst.notImplemented();
-    }
-  }
 
-  public static void recycle() {
+	private void getToken(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
+						tokenVerifyResult = (TokenVerifyResult) data;
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put("opToken",tokenVerifyResult.getOpToken());
+						map.put("token",tokenVerifyResult.getToken());
+						map.put("operator",tokenVerifyResult.getOperator());
+						onSuccess(rst,map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
+						// callback onError
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("getToken() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+		SMSSDK.getToken();
+	}
+
+	private void login(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
+						tokenVerifyResult = null;
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put("success",true);
+						onSuccess(rst,map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
+						// callback onError
+						tokenVerifyResult = null;
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("login() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+		String phoneNumber = call.argument("phoneNumber");
+		if (tokenVerifyResult == null){
+			try {
+				JSONObject errorJson = new JSONObject();
+				errorJson.putOpt("detail","请先调用获取token方法");
+				onSdkError(rst,errorJson.toString());
+			} catch (JSONException e) {
+			}
+		} else {
+			SMSSDK.login(phoneNumber,tokenVerifyResult);
+		}
+	}
+
+	private void getSupportedCountries(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_GET_SUPPORTED_COUNTRIES) {
+						// callback onSuccess
+						// data示例：[{zone=590, rule=^\d+}, {zone=680, rule=^\d+}]
+						ArrayList<HashMap<String, Object>> list = (ArrayList<HashMap<String, Object>>)data;
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put("countries", list);
+						onSuccess(rst, map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_GET_SUPPORTED_COUNTRIES) {
+						// callback onError
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("getSupportedCountries() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+
+		SMSSDK.getSupportedCountries();
+	}
+
+	private void commitCode(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_SUBMIT_VERIFICATION_CODE) {
+						// callback onSuccess
+						// data示例：{country=86, phone=13362206853}
+						HashMap<String, Object> dataMap = (HashMap<String, Object>)data;
+						Map<String, Object> map = new HashMap<>();
+						onSuccess(rst, map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_SUBMIT_VERIFICATION_CODE) {
+						// callback onError
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("commitCode() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+
+		String phoneNumber = call.argument("phoneNumber");
+		String zone = call.argument("zone");
+		String code = call.argument("code");
+		SMSSDKLog.d("zone: " + zone);
+		SMSSDKLog.d("phoneNumber: " + phoneNumber);
+		SMSSDKLog.d("code: " + code);
+		SMSSDK.submitVerificationCode(zone, phoneNumber, code);
+
+	}
+
+	private void getVoiceCode(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_GET_VOICE_VERIFICATION_CODE) {
+						// callback onSuccess
+						// 此接口data=null
+						Map<String, Object> map = new HashMap<>();
+						onSuccess(rst, map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_GET_VOICE_VERIFICATION_CODE) {
+						// callback onError
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("getVoiceCode() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+
+		String phoneNumber = call.argument("phoneNumber");
+		String zone = call.argument("zone");
+		SMSSDKLog.d("zone: " + zone);
+		SMSSDKLog.d("phoneNumber: " + phoneNumber);
+		SMSSDK.getVoiceVerifyCode(zone, phoneNumber);
+	}
+
+	private void getTextCode(MethodCall call, final Result rst) {
+		// 注册监听器
+		EventHandler callback = new EventHandler() {
+			@Override
+			public void afterEvent(final int event, final int result, final Object data) {
+				if (result == SMSSDK.RESULT_COMPLETE) {
+					if (event == SMSSDK.EVENT_GET_VERIFICATION_CODE) {
+						boolean smart = (Boolean)data;
+						// callback onSuccess
+						Map<String, Object> map = new HashMap<>();
+						map.put("smart", smart);
+						onSuccess(rst, map);
+					}
+				} else {
+					if (event == SMSSDK.EVENT_GET_VERIFICATION_CODE) {
+						// callback onError
+						if (data instanceof Throwable) {
+							Throwable throwable = (Throwable) data;
+							String msg = throwable.getMessage();
+							onSdkError(rst, msg);
+						} else {
+							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
+							SMSSDKLog.e("getTextCode() internal error: " + msg);
+							onInternalError(rst, msg);
+						}
+					}
+				}
+			}
+		};
+		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
+		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
+		SMSSDK.unregisterAllEventHandler();
+		SMSSDK.registerEventHandler(callback);
+
+		String phoneNumber = call.argument("phoneNumber");
+		String zone = call.argument("zone");
+		String tempCode = call.argument("tempCode");
+		SMSSDKLog.d("tempCode: " + tempCode);
+		SMSSDKLog.d("zone: " + zone);
+		SMSSDKLog.d("phoneNumber: " + phoneNumber);
+		SMSSDK.getVerificationCode(tempCode, zone, phoneNumber);
+	}
+
+	public static void recycle() {
   	SMSSDK.unregisterAllEventHandler();
   }
 
@@ -359,7 +403,12 @@ public class MobsmsPlugin implements MethodCallHandler {
 	  new Handler(Looper.getMainLooper()).post(new Runnable() {
 		  @Override
 		  public void run() {
-			  result.success(map);
+			  try {
+			  	result.success(map);
+			  }catch (IllegalStateException e){
+				  // ignore
+				  e.printStackTrace();
+			  }
 		  }
 	  });
   }
@@ -382,7 +431,12 @@ public class MobsmsPlugin implements MethodCallHandler {
 		  new Handler(Looper.getMainLooper()).post(new Runnable() {
 			  @Override
 			  public void run() {
-				  result.success(map);
+				  try {
+					  result.success(map);
+				  }catch (IllegalStateException e){
+					  // ignore
+					  e.printStackTrace();
+				  }
 			  }
 		  });
 	  } catch (JSONException e) {
@@ -403,8 +457,14 @@ public class MobsmsPlugin implements MethodCallHandler {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			@Override
 			public void run() {
-				result.success(map);
+				try {
+					result.success(map);
+				}catch (IllegalStateException e){
+					// ignore
+					e.printStackTrace();
+				}
 			}
 		});
 	}
+
 }
