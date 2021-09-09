@@ -34,10 +34,10 @@ class Smssdk {
   }
 
   static Future<Result> commitCode(
-    String phoneNumber,
-    String zone,
-    String code,
-  ) async {
+      String phoneNumber,
+      String zone,
+      String code,
+      ) async {
     Map args = {"phoneNumber": phoneNumber, "zone": zone, "code": code};
 
     Map<dynamic, dynamic>? response =

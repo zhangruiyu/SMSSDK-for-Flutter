@@ -5,8 +5,7 @@ import android.os.Bundle;
 import com.mob.MobSDK;
 
 import cn.smssdk.flutter.MobsmsPlugin;
-import io.flutter.app.FlutterActivity;
-import io.flutter.plugins.GeneratedPluginRegistrant;
+import io.flutter.embedding.android.FlutterActivity;
 
 public class MainActivity extends FlutterActivity {
 	// 通过Mob console申请获得
@@ -16,9 +15,6 @@ public class MainActivity extends FlutterActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    GeneratedPluginRegistrant.registerWith(this);
-    // 注册SMSSDK Flutter插件
-    MobsmsPlugin.registerWith(registrarFor(MobsmsPlugin.CHANNEL));
     // 初始化SMSSDK
 	MobSDK.init(this, MOB_APPKEY, MOB_APPSECRET);
   }
