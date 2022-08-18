@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 
 import com.mob.MobSDK;
 
-import cn.mob.flutter.smssdk.MobsmsPlugin;
+import com.mob.flutter.smssdk.MobsmsPlugin;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugins.GeneratedPluginRegistrant;

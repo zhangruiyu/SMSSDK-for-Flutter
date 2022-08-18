@@ -1,4 +1,4 @@
-package android.src.main.java.cn.mob.flutter.smssdk.impl;
+package android.src.main.java.com.mob.flutter.smssdk.impl;
 
 import android.util.Log;
 

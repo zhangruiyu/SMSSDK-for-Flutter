@@ -1,4 +1,4 @@
-package cn.mob.flutter.smssdk;
+package com.mob.flutter.smssdk;
 
 import android.content.Context;
 import android.os.Handler;
@@ -23,14 +23,14 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-import android.src.main.java.cn.mob.flutter.smssdk.impl.SMSSDKLog;
+import android.src.main.java.com.mob.flutter.smssdk.impl.SMSSDKLog;
 
 import androidx.annotation.NonNull;
 
 /** MobsmsPlugin */
 public class MobsmsPlugin implements FlutterPlugin, MethodCallHandler {
 	private static final String TAG = "MobsmsPlugin";
-	public static final String CHANNEL = "com.mob.smssdk";
+	public static final String CHANNEL = "com.mob.smssdk.channel";
 	private static final String KEY_CODE = "code";
 	private static final String KEY_MSG = "msg";
 	private static final int BRIDGE_ERR = 700;
