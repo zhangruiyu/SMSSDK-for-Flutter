@@ -39,7 +39,12 @@ public class MobsmsPlugin implements FlutterPlugin, MethodCallHandler {
 	private MethodChannel methodChannel;
 
 	public MobsmsPlugin(){
-		MobSDK.setChannel(new com.mob.commons.SMSSDK(),MobSDK.CHANNEL_FLUTTER);
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				MobSDK.setChannel(new com.mob.commons.SMSSDK(),MobSDK.CHANNEL_FLUTTER);
+			}
+		}).start();
 	}
 
   /** Plugin registration. */
