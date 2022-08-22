@@ -21,7 +21,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: cn.mob.flutter.smssdk
+        package: com.mob.flutter.smssdk
         pluginClass: MobsmsPlugin
       ios:
         pluginClass: MobsmsPlugin
