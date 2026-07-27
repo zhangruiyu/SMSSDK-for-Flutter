@@ -1,13 +1,10 @@
 #import "MobsmsPlugin.h"
 #import <SMS_SDK/SMSSDK.h>
 #import <MobFoundation/MobFoundation.h>
-#import <SMS_SDK/SMSSDKAuthToken.h>
 #import <SMS_SDK/SMSSDK+ContactFriends.h>
 
 
 static FlutterMethodChannel* channel = nil;
-static SMSSDKAuthToken *authToken = nil;
-
 @implementation MobsmsPlugin
 
 
@@ -143,65 +140,6 @@ static SMSSDKAuthToken *authToken = nil;
         BOOL isWarn = [arguments[@"isWarn"] boolValue];
         [SMSSDK enableAppContactFriends:isWarn];
         result(@{});
-    } else if ([@"getToken" isEqualToString:call.method]) {
-        [SMSSDK getMobileAuthTokenWith:^(SMSSDKAuthToken *model, NSError *error) {
-            NSMutableDictionary *ret = [NSMutableDictionary dictionary];
-            
-            if (authToken) authToken = nil;
-            
-            if (model
-                && [model isKindOfClass:[SMSSDKAuthToken class]]) {
-                NSDictionary *result = @{
-                    @"token": model.token,
-                    @"opToken": model.opToken,
-                    @"operator": model.operatorType
-                };
-                
-                authToken = model;
-                [ret setObject:result forKey:@"ret"];
-            } else {
-                NSDictionary *errDict = [MobsmsPlugin errorToUZDict:error];
-                if (errDict) [ret setObject:errDict forKey:@"err"];
-            }
-            result(ret);
-        }];
-    } else if ([@"login" isEqualToString:call.method]) {
-        NSLog(@"%@", arguments);
-        if (!authToken
-            || ![authToken isKindOfClass:[SMSSDKAuthToken class]]) {
-            NSError *locErr = [NSError errorWithDomain:@"SMSSDKErrorDomain"
-                                                  code:6119165
-                                              userInfo:@{@"description": @"Mobile AuthToken is empty!"}];
-            return result(@{@"err": [MobsmsPlugin errorToUZDict:locErr]});
-        }
-        
-        if (![[arguments allKeys] containsObject:@"phoneNumber"]
-            || ![[arguments objectForKey:@"phoneNumber"] isKindOfClass:[NSString class]]) {
-            NSError *locErr = [NSError errorWithDomain:@"SMSSDKErrorDomain"
-                                                  code:6119165
-                                              userInfo:@{@"description": @"MobileVerify PhoneNumber is empty!"}];
-            return result(@{@"err": [MobsmsPlugin errorToUZDict:locErr]});
-        }
-        
-        NSString *phoneNumber = [arguments objectForKey:@"phoneNumber"];
-        [SMSSDK verifyMobileWithPhone:phoneNumber
-                                token:authToken
-                           completion:^(BOOL isValid, NSError *error) {
-            // Set AuthToken To Nil
-            authToken = nil;
-            
-            NSMutableDictionary *mDict = [NSMutableDictionary dictionary];
-            if (error
-                && [error isKindOfClass:[NSError class]]) {
-                [mDict setObject:[MobsmsPlugin errorToUZDict:error]
-                          forKey:@"err"];
-            } else {
-                [mDict setObject:@{@"success": @(isValid)}
-                          forKey:@"ret"];
-            }
-            
-            result([mDict copy]);
-        }];
     } else if ([@"uploadPrivacyStatus" isEqualToString:call.method]) {
         NSLog(@"%@", arguments);
         BOOL status = NO;
