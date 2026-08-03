@@ -1,14 +1,16 @@
+plugins {
+    id "com.android.application"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+apply plugin: 'com.mob.sdk'
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withReader('UTF-8') { reader ->
         localProperties.load(reader)
     }
-}
-
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new FileNotFoundException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
 }
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
@@ -21,11 +23,6 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-apply plugin: 'com.android.application'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-// 导入MobSDK
-apply plugin: 'com.mob.sdk'
-
 MobSDK {
     spEdition "fp"
     appKey "moba6b6c6d6"
@@ -33,13 +30,12 @@ MobSDK {
     SMSSDK {
         // 若使用GUI的自动填充验证码功能，需打开此设置
 //        autoSMS true
-        mobileAuth true
     }
 }
 
-
 android {
-    compileSdkVersion 28
+    compileSdk 34
+    namespace 'cn.smssdk.demo'
 
     lintOptions {
         disable 'InvalidPackage'
@@ -47,14 +43,14 @@ android {
 
     defaultConfig {
         applicationId "cn.smssdk.demo"
-        minSdkVersion 16
-        targetSdkVersion 28
+        minSdkVersion flutter.minSdkVersion
+        targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs{
+    signingConfigs {
         release {
             storeFile file("demokey.keystore")
             storePassword "123456"
@@ -64,31 +60,21 @@ android {
     }
 
     buildTypes {
-
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
             signingConfig signingConfigs.release
         }
         debug {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
             signingConfig signingConfigs.release
         }
     }
-
-    // 线上集成smssdk flutter插件时需要配置
-//    dependencies {
-//        provided rootProject.findProject(":mobsms")
-//    }
-}
-
-flutter {
-    source '../..'
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }

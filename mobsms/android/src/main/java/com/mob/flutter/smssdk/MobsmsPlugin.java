@@ -22,8 +22,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
-import android.src.main.java.com.mob.flutter.smssdk.impl.SMSSDKLog;
+import com.mob.flutter.smssdk.impl.SMSSDKLog;
 
 import androidx.annotation.NonNull;
 
@@ -47,13 +46,6 @@ public class MobsmsPlugin implements FlutterPlugin, MethodCallHandler {
 		}).start();
 	}
 
-  /** Plugin registration. */
-  public static void registerWith(Registrar registrar) {
-	  SMSSDKLog.d("registerWith() called");
-	  final MobsmsPlugin instance = new MobsmsPlugin();
-	  instance.onAttachedToEngine(registrar.context(), registrar.messenger());
-  }
-
   @Override
   public void onMethodCall(MethodCall call, final Result rst) {
 	  SMSSDKLog.d("onMethodCall. method: " + call.method);
@@ -69,12 +61,6 @@ public class MobsmsPlugin implements FlutterPlugin, MethodCallHandler {
 		  	break;
 		  case "getSupportedCountries":
 			  getSupportedCountries(call, rst);
-			  break;
-		  case "login":
-			  login(call, rst);
-			  break;
-		  case "getToken":
-			  getToken(call, rst);
 			  break;
 		  case "submitUserInfo":
 			  submitUserInfo(call, rst);
@@ -161,89 +147,6 @@ public class MobsmsPlugin implements FlutterPlugin, MethodCallHandler {
 		SMSSDKLog.d("nickname: " + nickname);
 		SMSSDKLog.d("avatar: " + avatar);
 		SMSSDK.submitUserInfo(uid, nickname, avatar, zone, phoneNumber);
-	}
-
-	private void getToken(MethodCall call, final Result rst) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
-						tokenVerifyResult = (TokenVerifyResult) data;
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("opToken",tokenVerifyResult.getOpToken());
-						map.put("token",tokenVerifyResult.getToken());
-						map.put("operator",tokenVerifyResult.getOperator());
-						onSuccess(rst,map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_GET_VERIFY_TOKEN_CODE) {
-						// callback onError
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("getToken() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-		SMSSDK.getToken();
-	}
-
-	private void login(MethodCall call, final Result rst) {
-		// 注册监听器
-		EventHandler callback = new EventHandler() {
-			@Override
-			public void afterEvent(final int event, final int result, final Object data) {
-				if (result == SMSSDK.RESULT_COMPLETE) {
-					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
-						tokenVerifyResult = null;
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("success",true);
-						onSuccess(rst,map);
-					}
-				} else {
-					if (event == SMSSDK.EVENT_VERIFY_LOGIN) {
-						// callback onError
-						tokenVerifyResult = null;
-						if (data instanceof Throwable) {
-							Throwable throwable = (Throwable) data;
-							String msg = throwable.getMessage();
-							onSdkError(rst, msg);
-						} else {
-							String msg = "Sdk returned 'RESULT_ERROR', but the data is NOT an instance of Throwable";
-							SMSSDKLog.e("login() internal error: " + msg);
-							onInternalError(rst, msg);
-						}
-					}
-				}
-			}
-		};
-		// Flutter的Result对象只能返回一次数据，同一个Result对象如果再次提交数据会crash（错误信息：数据已被提交过），所以要把前一次的EventHandler注销掉
-		// 否则重复调用统一个接口时，smssdk会针对所有EventHandler发送回调，旧的Result对象就会被触发，导致Flutter层crash
-		SMSSDK.unregisterAllEventHandler();
-		SMSSDK.registerEventHandler(callback);
-		String phoneNumber = call.argument("phoneNumber");
-		if (tokenVerifyResult == null){
-			try {
-				JSONObject errorJson = new JSONObject();
-				errorJson.putOpt("detail","请先调用获取token方法");
-				onSdkError(rst,errorJson.toString());
-			} catch (JSONException e) {
-			}
-		} else {
-			SMSSDK.login(phoneNumber,tokenVerifyResult);
-		}
 	}
 
 	private void getSupportedCountries(MethodCall call, final Result rst) {
