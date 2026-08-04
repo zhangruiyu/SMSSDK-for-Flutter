@@ -23,7 +23,9 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 34
-    namespace 'com.mob.flutter.smssdk'
+    if (project.android.hasProperty("namespace")){
+        namespace 'com.mob.flutter.smssdk'
+    }
 
     defaultConfig {
         minSdkVersion 16
