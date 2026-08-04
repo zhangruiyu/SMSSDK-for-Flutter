@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'mobsms'
-  s.version          = '1.0.1'
+  s.version          = '1.2.1'
   s.summary          = 'SMSSDK Plugin Project.'
   s.description      = <<-DESC
 The smssdk fundation project.

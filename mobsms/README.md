@@ -4,9 +4,9 @@
 
 ## 开始
 
-1.Flutter集成文档 [SMSSDK-For-Flutter 在线文档](https://pub.dartlang.org/packages/mobsms#-installing-tab-)
+1.Flutter集成文档 [SMSSDK-For-Flutter 在线文档](https://pub.dev/packages/mobsms)
 
-2.iOS平台配置参考 [iOS集成文档](http://wiki.mob.com/快速集成-11/)
+2.iOS平台配置参考 [iOS集成文档](https://wiki.mob.com/快速集成-11/)
 
 - 实现 "一、注册应用获取appKey 和 appSecret"
 - 实现 "三、配置appkey和appSecret"
@@ -14,79 +14,28 @@
 3.Android平台集成
 
 #####导入SMSSDK相关依赖
-1. 在项目根目录的build.gradle中添加以下代码：
 
-```
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        **classpath 'com.mob.sdk:MobSDK:+'**
-    }
-```
+1. 在项目根路径下的 pubspec.yaml 文件中添加 SMSSDK Flutter 插件：
 
-2. 在/android/app/build.gradle中添加以下代码：
-
-```
-apply plugin: 'com.android.application'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-// 导入MobSDK
-**apply plugin: 'com.mob.sdk'**
-```
-
-3. 在根路径下的pubspec.yaml文件中添加smssdk flutter插件：
-
-```
+```yaml
 dependencies:
-  mobsms:
+  mobsms: ^1.1.11
 ```
 
-在你项目的Dart中添加以下代码：
+2. 在 Dart 代码中导入：
 
-```
- import 'package:mobsms/mobsms.dart'
-```
-
-这样，就可以使用plugin中定义的dart api了。
-
-4. 平台相关集成
-在项目的/android/app/build.gradle中添加:
-
-```
-android {
-    // lines skipped
-    dependencies {
-        provided rootProject.findProject(":mobsms")
-    }
-}
+```dart
+import 'package:mobsms/mobsms.dart';
 ```
 
-这样就可以在你的`project/android/src`下的类中`import cn.smssdk.flutter.MobsmsPlugin`并使用`MobsmsPlugin`中的api了。
+3. 初始化 SMSSDK：
 
-
-######添加代码
-1. 在MainActivity的onCreate中添加以下代码：
-
-```
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    GeneratedPluginRegistrant.registerWith(this);
-    // 注册SMSSDK Flutter插件
-    **MobsmsPlugin.registerWith(registrarFor(MobsmsPlugin.CHANNEL));**
-    // 初始化SMSSDK
-    **MobSDK.init(this, MOB_APPKEY, MOB_APPSECRET);**
-  }
+```dart
+// 在 main() 或 initState 中调用
+MobsmsPlugin.initSdk('MOB_APPKEY', 'MOB_APPSECRET');
 ```
 
-2. 在MainActivity的onDestory中添加以下代码：
-
-```
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		// 执行回收操作
-		**MobsmsPlugin.recycle();**
-	}
-```
+4. 更多 API 用法请参考 [在线文档](https://pub.dev/packages/mobsms)。
 
 ## 技术支持
 如有问题请联系技术支持:
